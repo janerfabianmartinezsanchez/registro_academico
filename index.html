@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeTracker Pro</title>
+    
+    <!-- Firebase Compat Version -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --card-radius: 16px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e1e2f);
+            color: var(--text-main);
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            background-attachment: fixed;
+        }
+
+        .dashboard {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* HEADER & GLOBAL STATS */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .student-details {
+            flex: 1;
+            min-width: 300px;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 30px;
+            border-radius: var(--card-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .student-details h1 {
+            margin: 0 0 25px 0;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .global-score-card {
+            background: linear-gradient(135deg, #3b82f6, #4f46e5);
+            padding: 35px 50px;
+            border-radius: var(--card-radius);
+            text-align: center;
+            box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+            min-width: 250px;
+        }
+
+        .global-score-card p {
+            margin: 0;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            opacity: 0.9;
+        }
+
+        #global-score {
+            font-size: 64px;
+            font-weight: 800;
+            margin: 10px 0 0 0;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            line-height: 1;
+        }
+
+        /* INPUTS COMUNES */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        /* SUBJECT CARDS GRID */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .subject-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            padding: 25px;
+            position: relative;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .subject-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .subject-name-input {
+            font-size: 20px;
+            font-weight: 700;
+            border: none;
+            background: transparent;
+            padding: 8px;
+            border-bottom: 2px solid transparent;
+            border-radius: 6px;
+            flex: 1;
+        }
+
+        .subject-name-input:focus {
+            background: rgba(0,0,0,0.2);
+            border-bottom: 2px solid var(--accent-primary);
+        }
+
+        .subject-average {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-primary);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 20px;
+            min-width: 70px;
+            text-align: center;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .delete-subject-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid transparent;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        
+        .delete-subject-btn:hover { 
+            background: #ef4444; 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* GRADE ROWS */
+        .grade-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+            padding: 8px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .grade-row input.g-name { flex: 2; padding: 10px; }
+        .grade-row input.g-nota { flex: 1; padding: 10px; font-weight: 600;}
+        .grade-row input.g-peso { flex: 1; padding: 10px; font-weight: 600; color: #93c5fd;}
+        
+        .delete-grade-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            font-size: 18px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        .delete-grade-btn:hover { 
+            color: #ef4444; 
+            background: rgba(239, 68, 68, 0.1); 
+        }
+
+        /* LOGROS ACADEMICOS */
+        .subject-logros {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px dashed rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 12px;
+            color: #e2e8f0;
+            font-size: 13px;
+            margin-top: 15px;
+            resize: vertical;
+            font-family: inherit;
+            min-height: 60px;
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+        .subject-logros:focus {
+            border-color: var(--accent-primary);
+            background: rgba(15, 23, 42, 0.8);
+            outline: none;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-add-grade {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+        }
+
+        .btn-add-grade:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .btn-success:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        /* NOTIFICATIONS */
+        #status-msg {
+            text-align: center;
+            margin-top: 25px;
+            font-weight: 600;
+            padding: 16px;
+            border-radius: 10px;
+            display: none;
+            backdrop-filter: blur(8px);
+        }
+
+        @media (max-width: 768px) {
+            .subjects-grid { grid-template-columns: 1fr; }
+            .header-section { flex-direction: column-reverse; }
+            .global-score-card, .student-details { width: 100%; box-sizing: border-box; }
+            .grade-row { flex-wrap: wrap; gap: 8px;}
+            .grade-row input.g-name { flex: 100%; }
+        }
+
+        /* MODAL DIRECTORIO */
+        .directory-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            z-index: 1000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .directory-modal.show {
+            display: flex; opacity: 1;
+        }
+        .directory-content {
+            background: var(--bg-dark); width: 90%; max-width: 800px;
+            border-radius: var(--card-radius); padding: 30px;
+            border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-height: 85vh; display: flex; flex-direction: column;
+            transform: translateY(20px); transition: transform 0.3s ease;
+        }
+        .directory-modal.show .directory-content {
+            transform: translateY(0);
+        }
+        .directory-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        .directory-header h2 { margin: 0; font-size: 24px; color: white; }
+        .close-btn {
+            background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; opacity: 0.6; transition: 0.2s;
+        }
+        .close-btn:hover { opacity: 1; color: #ef4444; }
+        
+        .directory-list-container {
+            overflow-y: auto; flex: 1;
+        }
+        .directory-table {
+            width: 100%; border-collapse: collapse; text-align: left;
+        }
+        .directory-table th {
+            padding: 15px; background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 13px; text-transform: uppercase;
+        }
+        .directory-table td {
+            padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); font-weight: 500;
+        }
+        .directory-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .btn-load {
+            background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 11px;
+            transition: 0.2s;
+        }
+        .btn-load:hover { background: #3b82f6; color: white; }
+        .loading-state { text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500;}
+
+        /* MODAL DE LOGIN (PROFESORES) */
+        .auth-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            z-index: 2000; display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+        .auth-card {
+            background: var(--bg-card); width: 90%; max-width: 400px;
+            border-radius: var(--card-radius); padding: 40px 30px;
+            border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+        .auth-card h2 { margin-top: 0; margin-bottom: 25px; font-size: 24px; }
+        .auth-error { color: #ef4444; font-size: 13px; margin-top: 15px; display: none; }
+
+        /* ==================================== */
+        /* OPTIMIZACIÓN PARA IMPRESIÓN (PAPEL)  */
+        /* ==================================== */
+        .print-only-header, .print-only-footer { display: none; }
+
+        @media print {
+            body { 
+                background: white; color: black; padding: 0; margin: 0; 
+                font-family: 'Times New Roman', serif;
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+            .action-buttons, .auth-modal, .directory-modal, #btn-logout { 
+                display: none !important; 
+            }
+            .dashboard { max-width: 100%; border: none; box-shadow: none; padding: 0; }
+            
+            /* MOSTRAR ELEMENTOS DE BOLETÍN */
+            .print-only-header { 
+                display: block; text-align: center; margin-bottom: 30px; 
+                border-bottom: 3px double black; padding-bottom: 15px; 
+            }
+            .print-only-header h1 { margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; }
+            .print-only-header p { margin: 5px 0 0 0; font-style: italic; color: #444; }
+
+            .print-only-footer { 
+                display: flex; justify-content: space-around; margin-top: 60px; 
+                page-break-inside: avoid; 
+            }
+            .signature-box { width: 40%; text-align: center; margin-top: 50px; }
+            .signature-box hr { border-top: 1px solid black; margin-bottom: 10px; }
+            
+            /* REAJUSTE DE LA INTERFAZ */
+            .header-section { flex-direction: column; align-items: center; text-align: center; gap: 10px; margin-bottom: 20px;}
+            .student-details { background: transparent; border: none; box-shadow: none; padding: 0; text-align: center; width: 100%;}
+            .student-details h1 { display: none; } /* Ocultar el título web */
+            
+            .input-group { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px;}
+            .input-group label { font-size: 16px; margin: 0; color: black; font-weight: bold; }
+            input { background: transparent; border: none !important; box-shadow: none !important; color: black !important; font-size: 18px; font-weight: 500; font-family: inherit; width: auto; padding: 0;}
+            input::placeholder { color: transparent; }
+            
+            .global-score-card { background: transparent; box-shadow: none; border: 2px solid black; padding: 15px 30px; width: fit-content; margin: 0 auto; border-radius: 8px;}
+            .global-score-card p { color: black; font-size: 14px; }
+            #global-score { color: black; text-shadow: none; font-size: 42px; margin-top: 5px;}
+            
+            /* MATERIAS COMO TABLA */
+            .subjects-grid { display: block; }
+            .subject-card { background: white; border: 1px solid black; box-shadow: none; margin-bottom: 15px; border-radius: 0; padding: 15px; page-break-inside: avoid;}
+            .subject-header { border-bottom: 1px solid black; padding-bottom: 10px; margin-bottom: 10px;}
+            .subject-name-input { font-family: 'Times New Roman', serif; font-size: 22px; color: black;}
+            .subject-average { background: transparent; border: none; box-shadow: none; color: black; font-size: 24px;}
+            
+            .grade-row { background: transparent; border: 1px solid #ccc; border-radius: 0; padding: 2px; }
+            .grade-row input.g-nota, .grade-row input.g-peso { color: black; font-weight: normal;}
+            
+            .subject-logros { 
+                background: transparent; border: none; color: black; font-family: 'Times New Roman', serif; 
+                font-style: italic; resize: none; padding: 10px 0; margin-top: 5px; 
+                border-top: 1px solid black; border-radius: 0; min-height: 20px; font-size: 16px;
+            }
+
+            .delete-subject-btn, .delete-grade-btn, .btn-add-grade { display: none !important; }
+            
+            /* BATCH PRINT */
+            .batch-student { page-break-after: always; width: 100%; display: block; margin: 0; padding: 0;}
+            #batch-print-container { display: block; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- PANTALLA DE INICIO DE SESIÓN -->
+    <div id="auth-modal" class="auth-modal">
+        <div class="auth-card">
+            <h2>Acceso de Profesores 👨‍🏫</h2>
+            <div class="input-group">
+                <input type="email" id="auth-email" placeholder="Correo electrónico">
+            </div>
+            <div class="input-group">
+                <input type="password" id="auth-password" placeholder="Contraseña">
+            </div>
+            <button id="btn-login" class="btn btn-success" style="width: 100%; margin-top: 10px;">Entrar al Sistema</button>
+            <button id="btn-register" class="btn" style="width: 100%; margin-top: 15px; background: rgba(255,255,255,0.05); color: #f8fafc; border: 1px solid rgba(255,255,255,0.2);">Crear Nueva Cuenta</button>
+            <div id="auth-error" class="auth-error">Error: Credenciales inválidas.</div>
+        </div>
+    </div>
+
+    <div class="dashboard" id="dashboard-normal">
+        
+        <!-- HEADER SOLO VISIBLE EN IMPRESIÓN -->
+        <div class="print-only-header">
+            <h1>Colegio Internacional Mayor</h1>
+            <p>Boletín Oficial de Calificaciones del Periodo</p>
+        </div>
+
+        <header class="header-section">
+            <div class="student-details">
+                <div style="display: flex; justify-content: space-between; align-items:flex-start;">
+                    <h1>Expediente Académico</h1>
+                    <button id="btn-logout" class="btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 15px; font-size: 12px;">Cerrar Sesión</button>
+                </div>
+                <div class="input-group">
+                    <label>Doc. Identidad / Carnet:</label>
+                    <input type="text" id="student-carnet" placeholder="Ej. A01234567">
+                </div>
+                <div class="input-group" style="margin-bottom:0">
+                    <label>Nombre del Estudiante:</label>
+                    <input type="text" id="student-name" placeholder="Ej. Carlos Mendoza">
+                </div>
+            </div>
+
+            <div class="global-score-card">
+                <p>Promedio General</p>
+                <div id="global-score">-</div>
+            </div>
+        </header>
+
+        <div id="subjects-grid" class="subjects-grid">
+            <!-- Tarjetas de Materias Generadas por JS -->
+        </div>
+
+        <div class="action-buttons">
+            <button id="add-subject-btn" class="btn btn-primary">➕ Nueva Materia</button>
+            <button id="save-firebase" class="btn btn-success">💾 Guardar Expediente</button>
+            <button id="search-firebase" class="btn btn-primary" style="background: var(--accent-primary); border-color: var(--accent-primary);">🔍 Buscar</button>
+            <button id="directory-btn" class="btn btn-primary" style="background: rgba(139, 92, 246, 0.2); border-color: #8b5cf6; color: #ddd6fe;">📑 Ver Directorio</button>
+            <button id="print-btn" class="btn btn-primary" style="background: rgba(255, 255, 255, 0.1); border-color: white; color: white;">🖨️ Imprimir Boletín</button>
+            <button id="print-all-btn" class="btn btn-primary" style="background: rgba(234, 179, 8, 0.2); border-color: #eab308; color: #fde047; display: none;">🖨️ Imprimir Todo El Colegio</button>
+            <button id="delete-firebase" class="btn" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);">🗑️ Eliminar</button>
+            <button id="clear-form-btn" class="btn" style="background: rgba(255, 255, 255, 0.05); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.2); transition: 0.2s;">🧹 Limpiar Todo</button>
+        </div>
+
+        <div id="status-msg"></div>
+
+        <!-- FOOTER SOLO VISIBLE EN IMPRESIÓN -->
+        <div class="print-only-footer">
+            <div class="signature-box">
+                <hr>
+                <p><strong>Firma del Docente</strong></p>
+                <p>Confirmación de calificaciones</p>
+            </div>
+            <div class="signature-box">
+                <hr>
+                <p><strong>Firma del Acudiente / Padre</strong></p>
+                <p>Recibido conforme</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Invisible para impresión masiva -->
+    <div id="batch-print-container" style="display: none;"></div>
+
+    <div id="directory-modal" class="directory-modal">
+        <div class="directory-content">
+            <div class="directory-header">
+                <h2>📚 Directorio de Estudiantes</h2>
+                <button id="close-directory" class="close-btn">✖</button>
+            </div>
+            <div class="directory-list-container">
+                <table class="directory-table">
+                    <thead>
+                        <tr>
+                            <th>Carnet / ID</th>
+                            <th>Estudiante</th>
+                            <th>Promedio Final</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directory-tbody">
+                        <!-- Filas inyectadas por JS -->
+                    </tbody>
+                </table>
+                <div id="directory-loading" class="loading-state">Obteniendo datos de Firebase...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script enlazado (Debe estar junto con este archivo html) -->
+    <script src="script.js"></script>
+</body>
+</html>
