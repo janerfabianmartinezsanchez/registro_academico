@@ -334,6 +334,7 @@ saveBtn.addEventListener('click', async () => {
     // 1. Recoger metadata del estudiante
     const carnet = document.getElementById('student-carnet').value.trim();
     const name = document.getElementById('student-name').value.trim();
+    const room = document.getElementById('student-room').value.trim();
 
     if (!carnet || !name) {
         displayStatus("Falta escribir el ID/Carnet o el Nombre del estudiante.", "red");
@@ -398,6 +399,7 @@ saveBtn.addEventListener('click', async () => {
         const dbRequest = db.collection("expedientes").doc(carnet).set({
             carnetID: carnet,
             estudiante: name,
+            salon: room,
             fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
             materiasPorProfesor: {
                 [userUid]: payloadMaterias
@@ -462,8 +464,9 @@ searchBtn.addEventListener('click', async () => {
         if (docSnap.exists) {
             const data = docSnap.data();
 
-            // 1. Cargar nombre del estudiante
+            // 1. Cargar nombre del estudiante y salón
             document.getElementById('student-name').value = data.estudiante || "";
+            document.getElementById('student-room').value = data.salon || "";
 
             // 2. Limpiar las materias actuales del DOM
             subjectsGrid.innerHTML = "";
@@ -694,6 +697,7 @@ directoryBtn.addEventListener('click', async () => {
             row.innerHTML = `
                 <td><strong>${data.carnetID}</strong></td>
                 <td>${data.estudiante || "Sin nombre"}</td>
+                <td>${data.salon || "-"}</td>
                 <td style="color: var(--accent-primary); font-weight: bold;">
                     ${promedioFinal}
                 </td>
@@ -741,6 +745,7 @@ printBtn.addEventListener('click', () => {
     // 1. Recolectar datos actuales de la pantalla
     const carnet = document.getElementById('student-carnet').value.trim() || 'No especificado';
     const name = document.getElementById('student-name').value.trim() || '';
+    const room = document.getElementById('student-room').value.trim() || '';
     const pGlobalText = document.getElementById('global-score').textContent;
     
     const payloadMaterias = [];
@@ -769,7 +774,7 @@ printBtn.addEventListener('click', () => {
     });
 
     // 2. Generar código HTML Estático Duro
-    const htmlBatch = generateStudentHTML(carnet, name, pGlobalText, payloadMaterias);
+    const htmlBatch = generateStudentHTML(carnet, name, room, pGlobalText, payloadMaterias);
 
     // 3. Ocultar la app interactiva y mostrar el Documento
     const batchContainer = document.getElementById('batch-print-container');
@@ -787,7 +792,7 @@ printBtn.addEventListener('click', () => {
 });
 
 // Funciòn de Plantilla para Impresiòn Masiva
-function generateStudentHTML(carnet, name, promedioGlobal, asignaturas) {
+function generateStudentHTML(carnet, name, room, promedioGlobal, asignaturas) {
     let subjectsHTML = '';
     asignaturas.forEach(m => {
         let rowsHTML = '';
@@ -827,6 +832,7 @@ function generateStudentHTML(carnet, name, promedioGlobal, asignaturas) {
         <div style="display: flex; flex-direction:column; align-items: center; margin-bottom: 20px;">
             <p style="font-size: 18px; margin: 5px 0;"><strong>Doc. Identidad / Carnet: </strong> <span style="font-size:20px;">${carnet}</span></p>
             <p style="font-size: 18px; margin: 5px 0;"><strong>Nombre del Estudiante: </strong> <span style="font-size:20px;">${name || '..............................'}</span></p>
+            <p style="font-size: 18px; margin: 5px 0;"><strong>Grado / Salón: </strong> <span style="font-size:20px;">${room || '..............................'}</span></p>
             
             <div style="border: 2px solid black; padding: 10px 30px; border-radius: 8px; text-align:center; margin-top: 10px;">
                 <p style="margin: 0; font-size: 14px;">Promedio Final del Alumno</p>
@@ -879,7 +885,7 @@ printAllBtn.addEventListener('click', async () => {
             
             if(asignaturas.length > 0) {
                const pFinal = conteo > 0 ? (suma/conteo).toFixed(2) : '-';
-               htmlBatch += generateStudentHTML(data.carnetID, data.estudiante, pFinal, asignaturas);
+               htmlBatch += generateStudentHTML(data.carnetID, data.estudiante, data.salon, pFinal, asignaturas);
             }
         });
         
