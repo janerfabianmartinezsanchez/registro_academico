@@ -491,14 +491,14 @@
         <div class="auth-card">
             <h2>Acceso de Profesores 👨‍🏫</h2>
             <div class="input-group">
-                <input type="email" id="auth-email" placeholder="Correo electrónico">
+                <input type="email" id="auth-email" placeholder="Correo electrónico" autocomplete="off">
             </div>
             <div class="input-group">
-                <input type="password" id="auth-password" placeholder="Contraseña">
+                <input type="password" id="auth-password" placeholder="Contraseña" autocomplete="new-password">
             </div>
             <button id="btn-login" class="btn btn-success" style="width: 100%; margin-top: 10px;">Entrar al Sistema</button>
             <button id="btn-register" class="btn" style="width: 100%; margin-top: 15px; background: rgba(255,255,255,0.05); color: #f8fafc; border: 1px solid rgba(255,255,255,0.2);">Crear Nueva Cuenta</button>
-            <div id="auth-error" class="auth-error">Error: Credenciales inválidas.</div>
+            <div id="auth-error" class="auth-error"></div>
         </div>
     </div>
 
